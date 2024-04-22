@@ -187,11 +187,58 @@ void prob9(IplImage* src, IplImage* dst) {
 	CvSize size = cvGetSize(src);
 	int w = size.width;
 	int h = size.height;
+	float H[3][3] = { {1,1,1},
+					  {0,0,0},
+						  {-1,-1,-1} };
+	float H2[3][3] = { {-1,-1,-1},
+					  {0,0,0},
+						  {1,1,1} };
+	float H3[3][3] = { {1,0,-1},
+						  {1,0,-1},
+							  {1,0,-1} };
+	float H4[3][3] = { {-1,0,1},{-1,0,1} ,{-1,0,1} };
 	for (int y = 0; y < h; y++) {
 		for (int x = 0; x < w; x++) {
+			CvScalar c = cvGet2D(src, y, x);
+			CvScalar g = cvScalar(0, 0, 0);
+			for (int i = 0; i < 3; i++) {
+				g.val[i] = c.val[i] *H[i][0] + c.val[i] * H[i][1] + c.val[i] * H[i][2];
+			}
+			cvSet2D(dst, y, x, g);
+		}
 
+	}
+	for (int y = 0; y < h; y++) {
+		for (int x = 0; x < w; x++) {
+			CvScalar c = cvGet2D(src, y, x);
+			CvScalar g = cvScalar(0, 0, 0);
+			for (int i = 0; i < 3; i++) {
+				g.val[i] = c.val[i] * H2[i][0] + c.val[i] * H2[i][1] + c.val[i] * H2[i][2];
+			}
+			cvSet2D(dst, y, x, g);
 		}
 	}
+	for (int y = 0; y < h; y++) {
+		for (int x = 0; x < w; x++) {
+			CvScalar c = cvGet2D(src, y, x);
+			CvScalar g = cvScalar(0, 0, 0);
+			for (int i = 0; i < 3; i++) {
+				g.val[i] = c.val[i] * H3[i][0] + c.val[i] * H3[i][1] + c.val[i] * H3[i][2];
+			}
+			cvSet2D(dst, y, x, g);
+		}
+	}
+	for (int y = 0; y < h; y++) {
+		for (int x = 0; x < w; x++) {
+			CvScalar c = cvGet2D(src, y, x);
+			CvScalar g = cvScalar(0, 0, 0);
+			for (int i = 0; i < 3; i++) {
+				g.val[i] = c.val[i] * H4[i][0] + c.val[i] * H4[i][1] + c.val[i] * H4[i][2];
+			}
+			cvSet2D(dst, y, x, g);
+		}
+	}
+	cvShowImage("prob9", dst);
 }
 
 void prob10(IplImage* src, IplImage* dst) {
@@ -338,8 +385,6 @@ void prob14(IplImage* src, IplImage* dst) {
 					g.val[i] = f.val[i] * 1;
 				}
 			}
-			
-
 			//// Set the destination pixel
 			cvSet2D(dst, y, x, g);
 		}
@@ -394,13 +439,166 @@ void prob17(IplImage* src, IplImage* dst) {
 	int h = size.height;
 	int stepX = w / 8;
 	int stepY = h / 8;
+	int flag = 1;
 	for (int y = 0; y < h; y++) {
 		for (int x = 0; x < w; x++) {
 			CvScalar c = cvGet2D(src, y, x);
-			
+			CvScalar b = cvScalar(0, 0, 0);
+			float nx = 2 * float(x) / (w - 1) - 1;  // [-1, 1]로 정규화
+			float ny = 2 * float(y) / (h - 1) - 1;
+
+			int ix = (nx + 1) / 0.25; // nx 구간 계산 [0, 8] 변환
+			int iy = (ny + 1) / 0.25; // ny 구간 계산 [0, 8] 변환
+
+			// 구간별 처리를 위한 간소화된 로직
+			if ((ix % 2 == 0 && iy % 2 == 1) || (ix % 2 == 1 && iy % 2 == 0)) {
+				for (int i = 0; i < 3; i++) {
+					b.val[i] = 0.5 * b.val[i];
+				}
+				cvSet2D(dst, y, x, b);
+			}
+			else {
+				cvSet2D(dst, y, x, c);
+			}
 		}
 	}
+	cvShowImage("prob17", dst);
 }
+
+bool isInTargetRange(float dist) {
+	// 정규화된 거리(dist)가 목표 범위 내에 있는지 확인
+	const float ranges[][2] = { {0.1f, 0.2f}, {0.3f, 0.4f}, {0.5f, 0.6f}, {0.7f, 0.8f}, {0.9f, 1.0f}, {1.1f, 1.2f}, {1.3f, 1.4f} };
+	for (auto& range : ranges) {
+		if (dist >= range[0] && dist <= range[1]) return true; // 범위 내에 있으면 true 반환
+	}
+	return false;
+}
+
+void prob20(IplImage* src, IplImage* dst) {
+	CvSize size = cvGetSize(src);
+	int w = size.width;
+	int h = size.height;
+	for (int y = 0; y < h; y++) {
+		for (int x = 0; x < w; x++) {
+			CvScalar c = cvGet2D(src, y, x);
+			float nx = 2 * float(x) / (w - 1) - 1; // [-1, 1]로 정규화
+			float ny = 2 * float(y) / (h - 1) - 1;
+			float dist = sqrt(nx * nx + ny * ny);
+			CvScalar g = cvScalar(0, 0, 0);
+			if (isInTargetRange(dist)) cvSet2D(dst, y, x, g);
+			else cvSet2D(dst, y, x, c);
+		}
+	}
+	cvShowImage("prob20", dst);
+}
+
+void prob21(IplImage* src, IplImage* dst) {
+	CvSize size = cvGetSize(src);
+	int w = size.width;
+	int h = size.height;
+	for (int y = 0; y < h; y++) {
+		for (int x = 0; x < w; x++) {
+			CvScalar c = cvGet2D(src, y, x);
+			float nx = 2 * float(x) / w - 1; // [-1, 1]로 정규화
+			float ny = 2 * float(y) / h - 1;
+			float d = fabs(nx) + fabs(ny);  // 절대값의 합을 계산하여 패턴 생성
+			float pattern = fmod(d, 0.2);   // 0.2 간격으로 패턴을 반복
+			if (d <= 0.1) pattern = 0.2;    // 0.1~0.2 사이의 값으로 정규화
+			CvScalar g = cvScalar(0, 0, 0); // 검정색 값
+			if (pattern > 0.1 && pattern < 0.2) {
+				cvSet2D(dst, y, x, g); // 패턴에 해당되면 원본 색상 적용
+			}
+			else {
+				cvSet2D(dst, y, x, c); // 패턴에 해당되지 않으면 검정색 적용
+			}
+		}
+	}
+	cvShowImage("prob21", dst);
+}
+
+void prob22(IplImage* src, IplImage* dst) {
+	CvSize size = cvGetSize(src);
+	int w = size.width;
+	int h = size.height;
+	cvSet(dst, cvScalar(0, 0, 0));
+	float nx;
+	float ny;
+	float newX;
+	float peak = w / 4;
+	for (int y = 0; y < h; y++) {
+		for (int x = 0; x < w; x++) {
+			CvScalar c = cvGet2D(src, y, x);
+			ny = (float)y / (h - 1) * CV_PI * 2;
+			newX = x + peak * sin(ny);
+			if (newX < 0) newX = 0;
+			if (newX > w) newX = w - 1;
+			cvSet2D(dst, y, newX, c);
+		}
+	}
+	cvShowImage("prob22", dst);
+}
+
+void prob23(IplImage* src, IplImage* dst) {
+	CvSize size = cvGetSize(src);
+	int w = size.width;
+	int h = size.height;
+	cvSet(dst, cvScalar(0, 0, 0));
+	float nx;
+	float ny;
+	float newY;
+	float peak = h / 4;
+	for (int y = 0; y < h; y++) {
+		for (int x = 0; x < w; x++) {
+			CvScalar c = cvGet2D(src, y, x);
+			nx = (float)x / (w - 1) * CV_PI * 2;
+			newY = y + peak * sin(nx);
+			if (newY < 0) newY = 0;
+			if (newY >= h) newY = h - 1;
+			cvSet2D(dst, newY, x, c);
+		}
+	}
+	cvShowImage("prob23", dst);
+}
+
+void prob24(IplImage* src, IplImage* dst) {
+	CvSize size = cvGetSize(src);
+	int w = size.width;
+	int h = size.height;
+
+	float amplitude = w / 10.0; // Amplitude is 1/10th of the image width
+	float frequency = 2 * CV_PI / w; // Full wave across the image width
+
+	for (int y = 0; y < h; y++) {
+		for (int x = 0; x < w; x++) {
+			// Normalize the coordinates to the range [-1, 1]
+			float nx = (2.0 * x / w) - 1;
+			// Calculate the sine wave pattern
+			float sineValue = amplitude * sin(frequency * x);
+
+			// Decide on the pixel color based on the sine value
+			CvScalar color;
+			if (y < sineValue) {
+				// Below the sine wave, we keep the original color
+				color = cvGet2D(src, y, x);
+			}
+			else {
+				// Above the sine wave, we set the color to black
+				color = CV_RGB(0, 0, 0);
+			}
+
+			// Set the color in the destination image
+			cvSet2D(dst, y, x, color);
+		}
+	}
+	cvShowImage("prob24", dst);
+}
+
+void prob25(IplImage* src, IplImage* dst) {
+	CvSize size = cvGetSize(src);
+	int w = size.width;
+	int h = size.height;
+}
+
 int main() {
 	IplImage* src[30];
 	IplImage* dst[30];
@@ -416,7 +614,7 @@ int main() {
 	prob6(src[5], dst[5]);
 	prob7(src[6], dst[6]);
 	prob8(src[7], dst[7]);
-	//prob8(src[7], dst[7]);
+	prob9(src[8], dst[8]);
 	prob10(src[9], dst[9]);
 	prob11(src[10], dst[10]);
 	prob12(src[11], dst[11]);
@@ -424,5 +622,12 @@ int main() {
 	prob14(src[13], dst[13]);
 	prob15(src[14], dst[14]);
 	prob16(src[15], dst[15]);
+	prob17(src[16], dst[16]);
+	prob20(src[17], dst[17]);
+	prob21(src[18], dst[18]);
+	prob22(src[19], dst[19]);
+	prob23(src[20], dst[20]);
+	prob24(src[21], dst[21]);
+	prob25(src[22], dst[22]);
 	cvWaitKey();
 }
