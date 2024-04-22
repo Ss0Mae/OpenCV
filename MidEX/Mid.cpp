@@ -299,15 +299,7 @@ void prob12(IplImage* src, IplImage* dst) {
 					g.val[i] = -1* f.val[i] + 255;
 				}
 			}
-			//// Determine the contrast factor and brightness offset based on x position
-			//float contrast_factor = (x > w / 2) ? contrast_factor_right : contrast_factor_left;
-			//int brightness_offset = (x > w / 2) ? brightness_offset_right : brightness_offset_left;
-
-			//// Apply contrast and brightness adjustments
-			//for (int i = 0; i < 3; i++) {
-			//	float value = contrast_factor * (f.val[i] - 128) + 128 + brightness_offset;
-			//	g.val[i] = (uchar)(value < 0 ? 0 : (value > 255 ? 255 : value));
-			//}
+			
 
 			//// Set the destination pixel
 			cvSet2D(dst, y, x, g);
@@ -435,6 +427,79 @@ void prob17(IplImage* src, IplImage* dst) {
 	cvShowImage("prob17", dst);
 }
 
+void prob18(IplImage* src, IplImage* dst) {
+	CvSize size = cvGetSize(src);
+	
+	int w = size.width;
+	int h = size.height;
+	int patternWidth = w / 4; // 패턴의 가로 크기
+	int patternHeight = h / 4; // 패턴의 세로 크기
+	
+	// 패턴 반복 간격 설정
+	int stepX = w / 4;
+	int stepY = h / 4;
+	
+	for (int y = 0; y < h; y++) {
+	    for (int x = 0; x < w; x++) {
+	        // 패턴의 중심 좌표 계산
+	        int patternX = x % stepX;
+	        int patternY = y % stepY;
+	
+	        // 마름모 모양 내부 조건
+	        if ((abs(patternX - patternWidth / 2) + abs(patternY - patternHeight / 2)) <= (patternWidth / 2) &&
+	            (abs(patternX - patternWidth / 2) + abs(patternY - patternHeight / 2)) <= (patternHeight / 2)) {
+	            // 패턴 내부인 경우 원본 이미지의 색상 사용
+	            CvScalar color = cvGet2D(src, y, x);
+	            cvSet2D(dst, y, x, color);
+	        }
+	
+	        else {
+				CvScalar color = cvGet2D(src, y, x);
+				for (int i = 0; i < 3; i++) {
+					color.val[i] = 0.5 * color.val[i];
+				}
+	        }
+	    }
+	}
+	cvShowImage("prob18", dst);
+}
+
+void prob19(IplImage* src, IplImage* dst) {
+	CvSize size = cvGetSize(src);
+
+	int w = size.width;
+	int h = size.height;
+	int patternWidth = w / 4; // 패턴의 가로 크기
+	int patternHeight = h / 4; // 패턴의 세로 크기
+
+	// 패턴 반복 간격 설정
+	int stepX = w / 4;
+	int stepY = h / 4;
+
+	for (int y = 0; y < h; y++) {
+		for (int x = 0; x < w; x++) {
+			// 패턴의 중심 좌표 계산
+			int patternX = x % stepX;
+			int patternY = y % stepY;
+			float d = sqrt(pow(patternX - patternWidth / 2, 2) + pow(patternY - patternHeight / 2, 2)); // 중심으로부터의 거리 계산
+			// 마름모 모양 내부 조건
+			if (d <= patternHeight / 2) {
+				// 패턴 내부인 경우 원본 이미지의 색상 사용
+				CvScalar color = cvGet2D(src, y, x);
+				cvSet2D(dst, y, x, color);
+			}
+
+			else {
+				CvScalar color = cvGet2D(src, y, x);
+				for (int i = 0; i < 3; i++) {
+					color.val[i] = 0.5 * color.val[i];
+				}
+				cvSet2D(dst, y, x, color);
+			}
+		}
+	}
+	cvShowImage("prob19", dst);
+}
 bool isInTargetRange(float dist) {
 	// 정규화된 거리(dist)가 목표 범위 내에 있는지 확인
 	const float ranges[][2] = { {0.1f, 0.2f}, {0.3f, 0.4f}, {0.5f, 0.6f}, {0.7f, 0.8f}, {0.9f, 1.0f}, {1.1f, 1.2f}, {1.3f, 1.4f} };
@@ -594,11 +659,13 @@ int main() {
 	prob15(src[14], dst[14]);
 	prob16(src[15], dst[15]);
 	prob17(src[16], dst[16]);
-	prob20(src[17], dst[17]);
-	prob21(src[18], dst[18]);
-	prob22(src[19], dst[19]);
-	prob23(src[20], dst[20]);
-	prob24(src[21], dst[21]);
-	prob25(src[22], dst[22]);
+	prob18(src[17], dst[17]);
+	prob19(src[18], dst[18]);
+	prob20(src[19], dst[19]);
+	prob21(src[20], dst[20]);
+	prob22(src[21], dst[21]);
+	prob23(src[22], dst[22]);
+	prob24(src[23], dst[23]);
+	prob25(src[24], dst[24]);
 	cvWaitKey();
 }
