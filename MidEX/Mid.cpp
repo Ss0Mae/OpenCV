@@ -7,7 +7,7 @@ void prob1(IplImage* src, IplImage* dst) {
 	for (int y = 0; y < h / 2; y++) {
 		for (int x = 0; x < w; x++) {
 			CvScalar c = cvGet2D(src, y, x);
-			CvScalar temp = cvGet2D(src, h - y - 1, x); // yÃà ´ëÄªÁ¡
+			CvScalar temp = cvGet2D(src, h - y - 1, x); // yì¶• ëŒ€ì¹­ì 
 			cvSet2D(dst, h - y - 1, x, c);
 			cvSet2D(dst, y, x, temp);
 		}
@@ -23,7 +23,7 @@ void prob2(IplImage* src, IplImage* dst) {
 	for (int y = 0; y < h; y++) {
 		for (int x = 0; x < w / 2; x++) {
 			CvScalar c1 = cvGet2D(src, y, x);
-			CvScalar temp1 = cvGet2D(src, y, w - 1 - x); // xÃà ´ëÄªÁ¡
+			CvScalar temp1 = cvGet2D(src, y, w - 1 - x); // xì¶• ëŒ€ì¹­ì 
 			cvSet2D(dst, y, x, temp1);
 			cvSet2D(dst, y, w - 1 - x, c1);
 		}
@@ -187,55 +187,25 @@ void prob9(IplImage* src, IplImage* dst) {
 	CvSize size = cvGetSize(src);
 	int w = size.width;
 	int h = size.height;
-	float H[3][3] = { {1,1,1},
-					  {0,0,0},
-						  {-1,-1,-1} };
-	float H2[3][3] = { {-1,-1,-1},
-					  {0,0,0},
-						  {1,1,1} };
-	float H3[3][3] = { {1,0,-1},
-						  {1,0,-1},
-							  {1,0,-1} };
-	float H4[3][3] = { {-1,0,1},{-1,0,1} ,{-1,0,1} };
 	for (int y = 0; y < h; y++) {
 		for (int x = 0; x < w; x++) {
-			CvScalar c = cvGet2D(src, y, x);
-			CvScalar g = cvScalar(0, 0, 0);
-			for (int i = 0; i < 3; i++) {
-				g.val[i] = c.val[i] *H[i][0] + c.val[i] * H[i][1] + c.val[i] * H[i][2];
-			}
-			cvSet2D(dst, y, x, g);
-		}
+			// Calculate the saturation factor based on the x-coordinate
+			float saturationFactor = (float)x / (w - 1);
 
-	}
-	for (int y = 0; y < h; y++) {
-		for (int x = 0; x < w; x++) {
-			CvScalar c = cvGet2D(src, y, x);
-			CvScalar g = cvScalar(0, 0, 0);
+			// Get the original color at the current pixel
+			CvScalar color = cvGet2D(src, y, x);
+
+			// Convert the color to grayscale
+			float grayscale = (color.val[0] + color.val[1] + color.val[2]) / 3.0;
+
+			// Adjust the saturation of the color
 			for (int i = 0; i < 3; i++) {
-				g.val[i] = c.val[i] * H2[i][0] + c.val[i] * H2[i][1] + c.val[i] * H2[i][2];
+				// Linearly interpolate between original color and grayscale
+				color.val[i] = (1 - saturationFactor) * color.val[i] + saturationFactor * grayscale;
 			}
-			cvSet2D(dst, y, x, g);
-		}
-	}
-	for (int y = 0; y < h; y++) {
-		for (int x = 0; x < w; x++) {
-			CvScalar c = cvGet2D(src, y, x);
-			CvScalar g = cvScalar(0, 0, 0);
-			for (int i = 0; i < 3; i++) {
-				g.val[i] = c.val[i] * H3[i][0] + c.val[i] * H3[i][1] + c.val[i] * H3[i][2];
-			}
-			cvSet2D(dst, y, x, g);
-		}
-	}
-	for (int y = 0; y < h; y++) {
-		for (int x = 0; x < w; x++) {
-			CvScalar c = cvGet2D(src, y, x);
-			CvScalar g = cvScalar(0, 0, 0);
-			for (int i = 0; i < 3; i++) {
-				g.val[i] = c.val[i] * H4[i][0] + c.val[i] * H4[i][1] + c.val[i] * H4[i][2];
-			}
-			cvSet2D(dst, y, x, g);
+
+			// Set the adjusted color in the destination image
+			cvSet2D(dst, y, x, color);
 		}
 	}
 	cvShowImage("prob9", dst);
@@ -444,13 +414,13 @@ void prob17(IplImage* src, IplImage* dst) {
 		for (int x = 0; x < w; x++) {
 			CvScalar c = cvGet2D(src, y, x);
 			CvScalar b = cvScalar(0, 0, 0);
-			float nx = 2 * float(x) / (w - 1) - 1;  // [-1, 1]·Î Á¤±ÔÈ­
+			float nx = 2 * float(x) / (w - 1) - 1;  // [-1, 1]ë¡œ ì •ê·œí™”
 			float ny = 2 * float(y) / (h - 1) - 1;
 
-			int ix = (nx + 1) / 0.25; // nx ±¸°£ °è»ê [0, 8] º¯È¯
-			int iy = (ny + 1) / 0.25; // ny ±¸°£ °è»ê [0, 8] º¯È¯
+			int ix = (nx + 1) / 0.25; // nx êµ¬ê°„ ê³„ì‚° [0, 8] ë³€í™˜
+			int iy = (ny + 1) / 0.25; // ny êµ¬ê°„ ê³„ì‚° [0, 8] ë³€í™˜
 
-			// ±¸°£º° Ã³¸®¸¦ À§ÇÑ °£¼ÒÈ­µÈ ·ÎÁ÷
+			// êµ¬ê°„ë³„ ì²˜ë¦¬ë¥¼ ìœ„í•œ ê°„ì†Œí™”ëœ ë¡œì§
 			if ((ix % 2 == 0 && iy % 2 == 1) || (ix % 2 == 1 && iy % 2 == 0)) {
 				for (int i = 0; i < 3; i++) {
 					b.val[i] = 0.5 * b.val[i];
@@ -466,10 +436,10 @@ void prob17(IplImage* src, IplImage* dst) {
 }
 
 bool isInTargetRange(float dist) {
-	// Á¤±ÔÈ­µÈ °Å¸®(dist)°¡ ¸ñÇ¥ ¹üÀ§ ³»¿¡ ÀÖ´ÂÁö È®ÀÎ
+	// ì •ê·œí™”ëœ ê±°ë¦¬(dist)ê°€ ëª©í‘œ ë²”ìœ„ ë‚´ì— ìžˆëŠ”ì§€ í™•ì¸
 	const float ranges[][2] = { {0.1f, 0.2f}, {0.3f, 0.4f}, {0.5f, 0.6f}, {0.7f, 0.8f}, {0.9f, 1.0f}, {1.1f, 1.2f}, {1.3f, 1.4f} };
 	for (auto& range : ranges) {
-		if (dist >= range[0] && dist <= range[1]) return true; // ¹üÀ§ ³»¿¡ ÀÖÀ¸¸é true ¹ÝÈ¯
+		if (dist >= range[0] && dist <= range[1]) return true; // ë²”ìœ„ ë‚´ì— ìžˆìœ¼ë©´ true ë°˜í™˜
 	}
 	return false;
 }
@@ -481,7 +451,7 @@ void prob20(IplImage* src, IplImage* dst) {
 	for (int y = 0; y < h; y++) {
 		for (int x = 0; x < w; x++) {
 			CvScalar c = cvGet2D(src, y, x);
-			float nx = 2 * float(x) / (w - 1) - 1; // [-1, 1]·Î Á¤±ÔÈ­
+			float nx = 2 * float(x) / (w - 1) - 1; // [-1, 1]ë¡œ ì •ê·œí™”
 			float ny = 2 * float(y) / (h - 1) - 1;
 			float dist = sqrt(nx * nx + ny * ny);
 			CvScalar g = cvScalar(0, 0, 0);
@@ -499,17 +469,17 @@ void prob21(IplImage* src, IplImage* dst) {
 	for (int y = 0; y < h; y++) {
 		for (int x = 0; x < w; x++) {
 			CvScalar c = cvGet2D(src, y, x);
-			float nx = 2 * float(x) / w - 1; // [-1, 1]·Î Á¤±ÔÈ­
+			float nx = 2 * float(x) / w - 1; // [-1, 1]ë¡œ ì •ê·œí™”
 			float ny = 2 * float(y) / h - 1;
-			float d = fabs(nx) + fabs(ny);  // Àý´ë°ªÀÇ ÇÕÀ» °è»êÇÏ¿© ÆÐÅÏ »ý¼º
-			float pattern = fmod(d, 0.2);   // 0.2 °£°ÝÀ¸·Î ÆÐÅÏÀ» ¹Ýº¹
-			if (d <= 0.1) pattern = 0.2;    // 0.1~0.2 »çÀÌÀÇ °ªÀ¸·Î Á¤±ÔÈ­
-			CvScalar g = cvScalar(0, 0, 0); // °ËÁ¤»ö °ª
+			float d = fabs(nx) + fabs(ny);  // ì ˆëŒ€ê°’ì˜ í•©ì„ ê³„ì‚°í•˜ì—¬ íŒ¨í„´ ìƒì„±
+			float pattern = fmod(d, 0.2);   // 0.2 ê°„ê²©ìœ¼ë¡œ íŒ¨í„´ì„ ë°˜ë³µ
+			if (d <= 0.1) pattern = 0.2;    // 0.1~0.2 ì‚¬ì´ì˜ ê°’ìœ¼ë¡œ ì •ê·œí™”
+			CvScalar g = cvScalar(0, 0, 0); // ê²€ì •ìƒ‰ ê°’
 			if (pattern > 0.1 && pattern < 0.2) {
-				cvSet2D(dst, y, x, g); // ÆÐÅÏ¿¡ ÇØ´çµÇ¸é ¿øº» »ö»ó Àû¿ë
+				cvSet2D(dst, y, x, g); // íŒ¨í„´ì— í•´ë‹¹ë˜ë©´ ì›ë³¸ ìƒ‰ìƒ ì ìš©
 			}
 			else {
-				cvSet2D(dst, y, x, c); // ÆÐÅÏ¿¡ ÇØ´çµÇÁö ¾ÊÀ¸¸é °ËÁ¤»ö Àû¿ë
+				cvSet2D(dst, y, x, c); // íŒ¨í„´ì— í•´ë‹¹ë˜ì§€ ì•Šìœ¼ë©´ ê²€ì •ìƒ‰ ì ìš©
 			}
 		}
 	}
@@ -565,19 +535,19 @@ void prob24(IplImage* src, IplImage* dst) {
 	int w = size.width;
 	int h = size.height;
 
-	float amplitude = w / 10.0; // Amplitude is 1/10th of the image width
-	float frequency = 2 * CV_PI / w; // Full wave across the image width
+	float amplitude = h / 10.0; // Amplitude is 1/10th of the image height
+	float frequency = 2 * CV_PI / h; // Full wave across the image height
 
 	for (int y = 0; y < h; y++) {
 		for (int x = 0; x < w; x++) {
 			// Normalize the coordinates to the range [-1, 1]
-			float nx = (2.0 * x / w) - 1;
+			float ny = (2.0 * y / h) - 1;
 			// Calculate the sine wave pattern
-			float sineValue = amplitude * sin(frequency * x);
+			float sineValue = amplitude * sin(frequency * y);
 
 			// Decide on the pixel color based on the sine value
 			CvScalar color;
-			if (y < sineValue) {
+			if (x < sineValue) {
 				// Below the sine wave, we keep the original color
 				color = cvGet2D(src, y, x);
 			}
@@ -590,6 +560,7 @@ void prob24(IplImage* src, IplImage* dst) {
 			cvSet2D(dst, y, x, color);
 		}
 	}
+
 	cvShowImage("prob24", dst);
 }
 
