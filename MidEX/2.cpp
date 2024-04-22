@@ -21,11 +21,13 @@ int main() {
             int patternY = y % stepY;
 
             // 마름모 모양 내부 조건
-            if ((abs(patternX - patternWidth/2) + abs(patternY - patternHeight/2 )) < (patternWidth /2)) {
+            if ((abs(patternX - patternWidth / 2) + abs(patternY - patternHeight / 2)) <= (patternWidth / 2) &&
+                (abs(patternX - patternWidth / 2) + abs(patternY - patternHeight / 2)) <= (patternHeight / 2)) {
                 // 패턴 내부인 경우 원본 이미지의 색상 사용
                 CvScalar color = cvGet2D(src, y, x);
                 cvSet2D(dst, y, x, color);
             }
+
             else {
                 float nx = 2 * (float)x / (w - 1) - 1;
                 float ny = 2 * (float)y / (h - 1) - 1;
