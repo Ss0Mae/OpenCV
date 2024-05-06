@@ -1,59 +1,139 @@
 #include <opencv2/opencv.hpp>
 #include <iostream>
-#include <string.h>
 using namespace std;
-IplImage* img;
-IplImage* pal;
-IplImage* buf;
-CvScalar color = cvScalar(255, 0, 0);
-CvPoint st = cvPoint(0, 0);
-CvPoint ed = cvPoint(0, 0);
 
-// 1. implementation
-void myMouse(int event, int x, int y, int flags, void* param)
-{
-	
-	if (event == CV_EVENT_LBUTTONDOWN || event == CV_EVENT_RBUTTONDOWN)
-	{
-		st = cvPoint(x, y);
-		
-	}
-	if (event == CV_EVENT_MOUSEMOVE && flags == CV_EVENT_FLAG_LBUTTON) //���׸�����
-	{
-		
-		ed = cvPoint(x, y);
-		cvLine(img, st, ed, color, 2);
-		cvShowImage("img", img);
-		
-	}
-}
-int main()
-{
-	char path[50];
-	int key = 0;
-	
-	cout << "Programming Assignment #4" << endl;
-	cout << "For Multimedia Programming Class 2021" << endl;
-	cout << "Department of Software, Sejong University" << endl << endl;
-	cout << "----------------------------------------------------------------" << endl;
-	cout << "Left Mouse Button Dragging: Draw the horizon line" << endl;
-	cout << "Right Mouse Button Dragging: Adjust the width of focusing region" << endl;
-	cout << "Number 1 thru 5 keys: Adjust the strength of the defucusing" << endl << endl;
-	cout << "ESC Key: Exit the program." << endl;
-	cout << "----------------------------------------------------------------" << endl;
+#define MAX_LEN 50
+#define MAX_STROKES 10000
+int mode = 0;
+IplImage* src;
+IplImage* dst;
+int brush[6] = { 30,20, 15, 10, 5, 3};
+
+struct stroke {
+	int x, y;
+	CvScalar color;
+};
+
+
+
+void readPicture() {
+	char imagePath[MAX_LEN];
+	cout << "=============================================" << endl;
+	cout << "Department of Software, Sejong University" << endl;
+	cout << "Multimedia Programming Homework #4" << endl;
+	cout << "Painterly Rendering" << endl;
+	cout << "=============================================" << endl;
 	cout << "Input File Path:";
-	
-	
-	cin >> path;
+	gets_s(imagePath, MAX_LEN);
+	src = cvLoadImage(imagePath);
 
-	img = cvLoadImage(path);
-	buf = cvCreateImage(cvSize(img->width, img->height), 8, 3);
-
-	cvShowImage("img", img);
-	cvSetMouseCallback("img", myMouse);
-	key = cvWaitKey();
-	if (key == 'ESC')
-		exit(-1);
-	
+	while (src == nullptr) {
+		printf("File Not Found!\n");
+		printf("Input File Name:");
+		gets_s(imagePath, MAX_LEN);
+		src = cvLoadImage(imagePath);
+	}
+	printf("Select Drawing Mode(0 = circle, 1 = stroke) : ");
+	while (true) {
+		if (scanf("%d", &mode) == 1 && (mode == 0 || mode == 1)) {
+			break;
+		}
+		else {
+			while (getchar() != '\n');
+			printf("Wrong Drawing Mode!\n");
+			printf("Select Drawing Mode(0 = circle, 1 = stroke) : ");
+		}
+	}
 }
-//C:\\Temp\\sample.jpg
+
+float calculateColorDifference(CvScalar c1, CvScalar c2) { //색상의 차이를 구하는 함수
+	float diff = 0.0f;
+	for (int i = 0; i < 3; i++) {
+		diff += (c1.val[i] - c2.val[i]) * (c1.val[i] - c2.val[i]);
+	}
+	return diff;
+}
+
+void paintLayer(IplImage* dst, IplImage *src, int brushSize) {
+	int grid = brushSize;
+	int kernel = brushSize / 2;
+	int strokeCount = 0;
+
+	if (kernel % 2 == 0) kernel = kernel + 1;
+	if (kernel == 1) kernel = 3;
+	IplImage *Ref = cvCreateImage(cvGetSize(src), 8, 3);
+	cvSmooth(src, Ref, CV_GAUSSIAN, 0, 0, kernel);
+	stroke strokes[MAX_STROKES];
+	stroke bestStroke;
+
+	for (int y = 0; y < src-> height; y += grid) {
+		for (int x = 0; x < src-> width; x +=grid) {
+			float error = 0.0f;
+			float maxError = 0.0f;
+
+			for(int dy = y - grid / 2; dy <= y + grid/2; dy++){
+				for (int dx = x - grid / 2; dx <= x + grid / 2; dx++) {
+					if (dx >= 0 && dy >= 0 && dx < src->width && dy < src->height) {
+						CvScalar c1 = cvGet2D(Ref, dy, dx);
+						CvScalar c2 = cvGet2D(src, dy, dx);
+						error = calculateColorDifference(c1, c2);
+					}
+					if (error > maxError && strokeCount < MAX_STROKES) {
+						maxError = error;
+						bestStroke.x = dx;
+						bestStroke.y = dy;
+						bestStroke.color = cvGet2D(Ref, dy, dx);
+					}
+				}
+			}
+
+			if (maxError > 0 && strokeCount < MAX_STROKES) {
+				strokes[strokeCount++] = bestStroke;
+			}
+
+		}
+	}
+
+	// 배열을 무작위로 섞기
+	srand(time(NULL));
+	for (int i = 0; i < strokeCount - 1; i++) {
+		int r = rand() % (strokeCount - i) + i;
+		stroke temp = strokes[i];
+		strokes[i] = strokes[r];
+		strokes[r] = temp;
+	}
+
+	// 스트로크 그리기
+	for (int i = 0; i < strokeCount; i++) {
+		if (mode == 0) { // 원형 스트로크
+			cvCircle(dst, cvPoint(strokes[i].x, strokes[i].y), brushSize, strokes[i].color, -1);
+		}
+	}
+
+}
+
+void paint() {
+	for (int i = 0; i < 6; i++) {
+		paintLayer(dst, src, brush[i]);
+		cvShowImage("canvas", dst);
+		cvWaitKey(1000);
+	}
+
+}
+
+void makeSplineStroke(IplImage* dst, int brushSize) {
+
+}
+int main() {
+	readPicture();
+	dst = cvCreateImage(cvGetSize(src), 8, 3);
+	//cvCopy(src, Ref);
+	cvSet(dst, cvScalar(255, 255, 255));
+	cvShowImage("src", src);
+	cvShowImage("canvas", dst);
+	cvWaitKey(1000);
+	if(mode == 0) paint();
+
+	cvWaitKey();
+
+}
